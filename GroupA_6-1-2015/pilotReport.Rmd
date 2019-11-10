@@ -1,0 +1,221 @@
+---
+title: "Reproducibility Report"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+[TEXT IN SQUARE BRACKETS IS HERE FOR GUIDANCE. PLEASE DELETE TEXT IN SQUARE BRACKETS BEFORE KNITTING THE FINAL REPORT]
+
+# Report Details
+
+
+```{r}
+articleID <- "6-1-2015"
+reportType <- "pilot"
+pilotNames <- "Ayo Dada"
+copilotNames <- "Effie Li"
+pilotTTC <- 180
+copilotTTC <- 120
+pilotStartDate <- as.Date("11/8/19", format = "%m/%d/%y")
+copilotStartDate <- NA # insert the co-piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- NA # insert the date of final report completion in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+```
+
+------
+
+#### Methods summary: 
+
+[PILOT/COPILOT write a brief summary of the methods underlying the target outcomes written in your own words]
+
+------
+
+#### Target outcomes: 
+
+>Experiment 1 was designed to explore the effects of crowding on perception and action, with a particular focus on whether participants could scale their grip aperture to the size of the target even when they could not consciously identify the size of the target. We carried out a four-way repeated measures ANOVA on the manual estimates and PGAs with task (estimation vs. grasping), crowding condition (uncrowded vs. crowded), viewing condition (closed- vs. open-loop), and target size (3.0 vs. 3.75 cm) as main factors. The significant interaction between task and crowding condition, F(1, 9) = 6.818, p = .028, suggested that crowding had different effects on performance of the grasping and manual estimation tasks. Not surprisingly, when the target was presented in isolation, participants were able to manually estimate the sizes of the two targets—and this was true for both closed-loop trials, t(9) = 7.23, p < .001, and open-loop trials, t(9) = 9.19, p < .001. Similarly, participants showed excellent grip scaling for targets presented in isolation on both closed-loop trials, t(9) = 4.29, p = .002, and openloop trials, t(9) = 4.79, p = .001 (Fig. 3). Things were quite different, however, when the target disks were surrounded by flankers. In this condition, participants could no longer discriminate between the two disk sizes using a manual estimate closed-loop trials: t(9) = 1.02, p = .334; open-loop trials: t(9) = 1.78, p = .108?presumably because the size of the target was perceptually invisible. (Note that we use the term invisible to refer to the fact that participants could not identify the size of the target, even though they were aware of its presence and position.) In contrast, when participants were asked to grasp the same targets, their PGAs were still scaled to target size?closed-loop trials: t(9) = 4.21, p = .002; open-loop trials: t(9) = 3.392, p = .008 (Fig. 3).
+------
+
+
+```{r global_options, include=FALSE}
+# sets up some formatting options for the R Markdown document
+knitr::opts_chunk$set(echo=TRUE, warning=FALSE, message=FALSE)
+```
+
+# Step 1: Load packages and prepare report object
+
+
+```{r}
+# load packages
+library(tidyverse) # for data munging
+library(knitr) # for kable table formating
+library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
+library(readxl) # import excel files
+library(ReproReports) # custom reporting functions
+```
+
+[PILOT/COPILOT DO NOT MAKE CHANGES TO THE CODE CHUNK BELOW]
+
+
+# Step 2: Load data
+
+```{r}
+CrowdPercep <- read_xlsx("data/data_Exp1.xlsx", sheet = "summary")
+```
+
+# Step 3: Tidy data
+
+```{r}
+CrowdPercep <- CrowdPercep[,-c(1,6,11,16)] # This removes those columns with NA all through
+
+# Next, we rename the columns to match the different conditions in the experiment. For those columns which already had a name, we simply change the names. For those without names, we use their index or position to assign names to them
+
+colnames(CrowdPercep)[colnames(CrowdPercep)=="closed-loop grasping"] <- "closed_grasp_uncr_3cm"
+
+names(CrowdPercep)[2]<-"closed_grasp_uncr_3.75cm"
+
+names(CrowdPercep)[3]<-"closed_grasp_cr_3cm"
+
+names(CrowdPercep)[4]<-"closed_grasp_cr_3.75cm"
+
+colnames(CrowdPercep)[colnames(CrowdPercep)=="open-loop_grasping"] <- "open_grasp_uncr_3cm"
+
+names(CrowdPercep)[6]<-"open_grasp_uncr_3.75cm"
+
+names(CrowdPercep)[7]<-"open_grasp_cr_3cm"
+
+names(CrowdPercep)[8]<-"open_grasp_cr_3.75cm"
+
+colnames(CrowdPercep)[colnames(CrowdPercep)=="closed-loop estimation"] <- "closed_estim_uncr_3cm"
+
+names(CrowdPercep)[10]<-"closed_estim_uncr_3.75cm"
+
+names(CrowdPercep)[11]<-"closed_estim_cr_3cm"
+
+names(CrowdPercep)[12]<-"closed_estim_cr_3.75cm"
+
+
+colnames(CrowdPercep)[colnames(CrowdPercep)=="open-loop estimation"] <- "open_estim_uncr_3cm"
+
+names(CrowdPercep)[14]<-"open_estim_uncr_3.75cm"
+
+names(CrowdPercep)[15]<-"open_estim_cr_3cm"
+
+names(CrowdPercep)[16]<-"open_estim_cr_3.75cm"
+
+
+CrowdPercep <- CrowdPercep[-c(1,2,13),] # We can now take out the top two rows which had some header information and the bottom row which already had some computed means
+
+# Here we convert the data to long data with each row representing a single observation
+CrowdPercep_long <- CrowdPercep %>%
+  pivot_longer(cols = `closed_grasp_uncr_3cm`:`open_estim_cr_3.75cm`, names_to = c("ViewingLoop", "Task", "CrowdingCond", "TargetSize"), names_sep = "_", values_to = "Measure")
+
+
+```
+
+# Step 4: Run analysis
+
+## Pre-processing
+
+```{r}
+# In order to run any analyses, we need to have the measure data in numeric form
+
+CrowdPercep_long$Measure <- as.numeric(as.character(CrowdPercep_long$Measure))
+
+# We could also have the conditions as factors
+
+CrowdPercep_long$ViewingLoop <- as.factor(as.character(CrowdPercep_long$ViewingLoop))
+CrowdPercep_long$Task <- as.factor(as.character(CrowdPercep_long$Task))
+CrowdPercep_long$CrowdingCond <- as.factor(as.character(CrowdPercep_long$CrowdingCond))
+CrowdPercep_long$TargetSize <- as.factor(as.character(CrowdPercep_long$TargetSize))
+
+# It may also be useful to see the difference between the object and the perceptions of the participants in all observations
+
+CrowdPercep_long <- CrowdPercep_long %>%
+  mutate(Delta = ifelse(TargetSize == "3cm", Measure - 3, Measure - 3.75 ))
+```
+
+## Descriptive statistics
+
+```{r}
+# This computes the means and standard deviations
+Descriptives1 <- CrowdPercep_long %>%
+  group_by(ViewingLoop, Task, CrowdingCond, TargetSize)%>%
+  summarise(mean(Measure))
+
+Descriptives2 <- CrowdPercep_long %>%
+  group_by(TargetSize)%>%
+  summarise(mean(Measure))
+
+
+```
+
+## Inferential statistics
+
+```{r}
+# 4-way repeated-measures ANOVA
+
+anova(mod1 <- lm(Measure ~ ViewingLoop * Task * CrowdingCond * TargetSize, data=CrowdPercep_long))
+
+summary(mod1)
+
+plot.design(Measure ~ ViewingLoop * Task * CrowdingCond * TargetSize, data=CrowdPercep_long)
+
+interaction.plot(CrowdPercep_long$CrowdingCond, CrowdPercep_long$TargetSize, CrowdPercep_long$Measure)
+
+# Interaction check (Task:Crowding condition) 
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = 6.818, obtainedValue = 2.6619, valueType = "F", eyeballCheck = FALSE)
+```
+
+
+# Pairwise t-tests
+
+pairwise.t.test(CrowdPercep_long$Measure, CrowdPercep_long$TargetSize, p.adjust.method = "none")
+
+pairwise.t.test(CrowdPercep_long$Measure, CrowdPercep_long$CrowdingCond, p.adjust.method = "none")
+
+```
+
+# Step 5: Conclusion
+
+[Please include a text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
+
+
+[PILOT/COPILOT DO NOT EDIT THE CODE CHUNK BELOW]
+
+```{r}
+reportObject <- reportObject %>%
+  filter(dummyRow == FALSE) %>% # remove the dummy row
+  select(-dummyRow) %>% # remove dummy row designation
+  mutate(articleID = articleID) %>% # add variables to report 
+  select(articleID, everything()) # make articleID first column
+
+# decide on final outcome
+if(any(reportObject$comparisonOutcome %in% c("MAJOR_ERROR", "DECISION_ERROR"))){
+  finalOutcome <- "Failure"
+}else{
+  finalOutcome <- "Success"
+}
+
+# collate report extra details
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, finalOutcome)
+
+# save report objects
+if(reportType == "pilot"){
+  write_csv(reportObject, "pilotReportDetailed.csv")
+  write_csv(reportExtras, "pilotReportExtras.csv")
+}
+
+if(reportType == "copilot"){
+  write_csv(reportObject, "copilotReportDetailed.csv")
+  write_csv(reportExtras, "copilotReportExtras.csv")
+}
+```
+
+# Session information
+
+[This function will output information about the package versions used in this report:]
+
+```{r session_info, include=TRUE, echo=TRUE, results='markup'}
+devtools::session_info()
+```
