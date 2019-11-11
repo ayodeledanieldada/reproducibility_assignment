@@ -19,21 +19,21 @@ copilotNames <- "Effie Li"
 pilotTTC <- 180
 copilotTTC <- 120
 pilotStartDate <- as.Date("11/8/19", format = "%m/%d/%y")
-copilotStartDate <- NA # insert the co-piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-completionDate <- NA # insert the date of final report completion in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- as.Date("11/9/19", format = "%m/%d/%y")
+completionDate <- as.Date("11/10/19", format = "%m/%d/%y")
 ```
 
 ------
 
 #### Methods summary: 
 
-[PILOT/COPILOT write a brief summary of the methods underlying the target outcomes written in your own words]
+Experiment 1 was conducted with 10 participants (5 females, 5 males) who were exposed to some perceptual tasks in a within-subjects design. Participants were exposed to two types of stimuli which were white disks of either 3 cm or 3.75 cm. They were required to either grasp the disk or estimate its size manually in both disk size conditions. Participants were also made to perform the task when the disk was isolated or when the disk was crowded with distracters. Sometimes, the participants would be able to see the hand movements they were making toward the disks for a period of 3 seconds (closed loop) and at other times they were totally blind to their own hand movements (open loop). This visual condition was achieved with a pair of specialized goggles for this experiment. When all the conditions were taken together, this yielded a 4 way (2x2x2x2) repeated measures design in which each participant was subjected to every variation of the experimental procedure.
 
 ------
 
 #### Target outcomes: 
 
->Experiment 1 was designed to explore the effects of crowding on perception and action, with a particular focus on whether participants could scale their grip aperture to the size of the target even when they could not consciously identify the size of the target. We carried out a four-way repeated measures ANOVA on the manual estimates and PGAs with task (estimation vs. grasping), crowding condition (uncrowded vs. crowded), viewing condition (closed- vs. open-loop), and target size (3.0 vs. 3.75 cm) as main factors. The significant interaction between task and crowding condition, F(1, 9) = 6.818, p = .028, suggested that crowding had different effects on performance of the grasping and manual estimation tasks. Not surprisingly, when the target was presented in isolation, participants were able to manually estimate the sizes of the two targets—and this was true for both closed-loop trials, t(9) = 7.23, p < .001, and open-loop trials, t(9) = 9.19, p < .001. Similarly, participants showed excellent grip scaling for targets presented in isolation on both closed-loop trials, t(9) = 4.29, p = .002, and openloop trials, t(9) = 4.79, p = .001 (Fig. 3). Things were quite different, however, when the target disks were surrounded by flankers. In this condition, participants could no longer discriminate between the two disk sizes using a manual estimate closed-loop trials: t(9) = 1.02, p = .334; open-loop trials: t(9) = 1.78, p = .108?presumably because the size of the target was perceptually invisible. (Note that we use the term invisible to refer to the fact that participants could not identify the size of the target, even though they were aware of its presence and position.) In contrast, when participants were asked to grasp the same targets, their PGAs were still scaled to target size?closed-loop trials: t(9) = 4.21, p = .002; open-loop trials: t(9) = 3.392, p = .008 (Fig. 3).
+Experiment 1 was designed to explore the effects of crowding on perception and action, with a particular focus on whether participants could scale their grip aperture to the size of the target even when they could not consciously identify the size of the target. We carried out a four-way repeated measures ANOVA on the manual estimates and PGAs with task (estimation vs. grasping), crowding condition (uncrowded vs. crowded), viewing condition (closed- vs. open-loop), and target size (3.0 vs. 3.75 cm) as main factors. The significant interaction between task and crowding condition, F(1, 9) = 6.818, p = .028, suggested that crowding had different effects on performance of the grasping and manual estimation tasks. Not surprisingly, when the target was presented in isolation, participants were able to manually estimate the sizes of the two targets—and this was true for both closed-loop trials, t(9) = 7.23, p < .001, and open-loop trials, t(9) = 9.19, p < .001. Similarly, participants showed excellent grip scaling for targets presented in isolation on both closed-loop trials, t(9) = 4.29, p = .002, and openloop trials, t(9) = 4.79, p = .001 . Things were quite different, however, when the target disks were surrounded by flankers. In this condition, participants could no longer discriminate between the two disk sizes using a manual estimate closed-loop trials: t(9) = 1.02, p = .334; open-loop trials: t(9) = 1.78, p = .108?presumably because the size of the target was perceptually invisible. (Note that we use the term invisible to refer to the fact that participants could not identify the size of the target, even though they were aware of its presence and position.) In contrast, when participants were asked to grasp the same targets, their PGAs were still scaled to target size?closed-loop trials: t(9) = 4.21, p = .002; open-loop trials: t(9) = 3.392, p = .008.
 ------
 
 
@@ -52,11 +52,15 @@ library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(ReproReports) # custom reporting functions
+library(lsr) # the aov function that runs ANOVA
 ```
 
 [PILOT/COPILOT DO NOT MAKE CHANGES TO THE CODE CHUNK BELOW]
 
-
+```{r}
+# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)
+```
 # Step 2: Load data
 
 ```{r}
@@ -106,6 +110,8 @@ names(CrowdPercep)[16]<-"open_estim_cr_3.75cm"
 
 CrowdPercep <- CrowdPercep[-c(1,2,13),] # We can now take out the top two rows which had some header information and the bottom row which already had some computed means
 
+CrowdPercep$SubjectID <- 1:10 # We need to run a repeated-measures anova, so a column of SubjectID will help
+
 # Here we convert the data to long data with each row representing a single observation
 CrowdPercep_long <- CrowdPercep %>%
   pivot_longer(cols = `closed_grasp_uncr_3cm`:`open_estim_cr_3.75cm`, names_to = c("ViewingLoop", "Task", "CrowdingCond", "TargetSize"), names_sep = "_", values_to = "Measure")
@@ -123,7 +129,7 @@ CrowdPercep_long <- CrowdPercep %>%
 CrowdPercep_long$Measure <- as.numeric(as.character(CrowdPercep_long$Measure))
 
 # We could also have the conditions as factors
-
+CrowdPercep_long$SubjectID<- as.factor(CrowdPercep_long$SubjectID)
 CrowdPercep_long$ViewingLoop <- as.factor(as.character(CrowdPercep_long$ViewingLoop))
 CrowdPercep_long$Task <- as.factor(as.character(CrowdPercep_long$Task))
 CrowdPercep_long$CrowdingCond <- as.factor(as.character(CrowdPercep_long$CrowdingCond))
@@ -138,15 +144,10 @@ CrowdPercep_long <- CrowdPercep_long %>%
 ## Descriptive statistics
 
 ```{r}
-# This computes the means and standard deviations
-Descriptives1 <- CrowdPercep_long %>%
+# This computes the means of the dataset
+Descriptives <- CrowdPercep_long %>%
   group_by(ViewingLoop, Task, CrowdingCond, TargetSize)%>%
   summarise(mean(Measure))
-
-Descriptives2 <- CrowdPercep_long %>%
-  group_by(TargetSize)%>%
-  summarise(mean(Measure))
-
 
 ```
 
@@ -155,30 +156,138 @@ Descriptives2 <- CrowdPercep_long %>%
 ```{r}
 # 4-way repeated-measures ANOVA
 
-anova(mod1 <- lm(Measure ~ ViewingLoop * Task * CrowdingCond * TargetSize, data=CrowdPercep_long))
+model = aov(Measure ~ ViewingLoop * Task * CrowdingCond * TargetSize + Error(SubjectID/(ViewingLoop * Task * CrowdingCond * TargetSize)), data=CrowdPercep_long)
+summary(model)$"Error: SubjectID:Task:CrowdingCond"
 
-summary(mod1)
+# check values
+reportObject <- reproCheck(reportedValue = '1', obtainedValue = '1', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '6.818', obtainedValue = '6.818', valueType = 'F')
 
 plot.design(Measure ~ ViewingLoop * Task * CrowdingCond * TargetSize, data=CrowdPercep_long)
 
 interaction.plot(CrowdPercep_long$CrowdingCond, CrowdPercep_long$TargetSize, CrowdPercep_long$Measure)
 
-# Interaction check (Task:Crowding condition) 
-reportObject <- data.frame(dummyRow = TRUE, reportedValue = 6.818, obtainedValue = 2.6619, valueType = "F", eyeballCheck = FALSE)
+
+"The significant interaction between task and crowding condition, F(1, 9) = 6.818, p = .028..."
+
 ```
 
 
+
+```{r}
+
 # Pairwise t-tests
 
-pairwise.t.test(CrowdPercep_long$Measure, CrowdPercep_long$TargetSize, p.adjust.method = "none")
+"...when the target was presented in isolation, participants were able to manually estimate the sizes of the two targets—and this was true for both closed-loop trials, t(9) = 7.23, p < .001, ..."
 
-pairwise.t.test(CrowdPercep_long$Measure, CrowdPercep_long$CrowdingCond, p.adjust.method = "none")
+
+t.test(as.numeric(CrowdPercep$closed_estim_uncr_3.75cm), as.numeric(CrowdPercep$closed_estim_uncr_3cm), paired = TRUE)
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '7.23', obtainedValue = '7.23', valueType = 't')
+```
+
+
+```{r}
+"...and open-loop trials, t(9) = 9.19, p < .001."
+
+
+t.test(as.numeric(CrowdPercep$open_estim_uncr_3.75cm), as.numeric(CrowdPercep$open_estim_uncr_3cm), paired = TRUE)
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '9.19', obtainedValue = '9.19', valueType = 't')
+```
+
+
+```{r}
+"Similarly, participants showed excellent grip scaling for targets presented in isolation on both closed-loop trials, t(9) = 4.29, p = .002,"
+
+t.test(as.numeric(CrowdPercep$closed_grasp_uncr_3.75cm), as.numeric(CrowdPercep$closed_grasp_uncr_3cm), paired = TRUE)
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '4.29', obtainedValue = '4.29', valueType = 't')
+
+
+
+```
+
+
+```{r}
+"...and openloop trials, t(9) = 4.79, p = .001 "
+
+t.test(as.numeric(CrowdPercep$open_grasp_uncr_3.75cm), as.numeric(CrowdPercep$open_grasp_uncr_3cm), paired = TRUE)
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '4.79', obtainedValue = '4.79', valueType = 't')
+
+
+```
+
+
+```{r}
+"Things were quite different, however, when the target disks were surrounded by flankers. In this condition, participants could no longer discriminate between the two disk sizes using a manual estimate closed-loop trials: t(9) = 1.02, p = .334;"
+
+t.test(as.numeric(CrowdPercep$closed_estim_cr_3.75cm), as.numeric(CrowdPercep$closed_estim_cr_3cm), paired = TRUE)
+
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '1.02', obtainedValue = '1.02', valueType = 't')
+
+
+
+```
+
+
+```{r}
+"...open-loop trials: t(9) = 1.78, p = .108"
+
+t.test(as.numeric(CrowdPercep$open_estim_cr_3.75cm), as.numeric(CrowdPercep$open_estim_cr_3cm), paired = TRUE)
+
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '1.78', obtainedValue = '1.78', valueType = 't')
+
+
+
+```
+
+
+```{r}
+"...In contrast, when participants were asked to grasp the same targets, their PGAs were still scaled to target size in closed-loop trials: t(9) = 4.21, p = .002"
+
+t.test(as.numeric(CrowdPercep$closed_grasp_cr_3.75cm), as.numeric(CrowdPercep$closed_grasp_cr_3cm), paired = TRUE)
+
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '4.21', obtainedValue = '4.21', valueType = 't')
+
+
+```
+
+
+```{r}
+"...open-loop trials: t(9) = 3.392, p = .008."
+
+t.test(as.numeric(CrowdPercep$open_grasp_cr_3.75cm), as.numeric(CrowdPercep$open_grasp_cr_3cm), paired = TRUE)
+
+
+# check values
+reportObject <- reproCheck(reportedValue = '9', obtainedValue = '9', valueType = 'df')
+reportObject <- reproCheck(reportedValue = '3.39', obtainedValue = '3.39', valueType = 't')
 
 ```
 
 # Step 5: Conclusion
 
-[Please include a text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
+This reproducibility task required some data munging but was very consistent with the reported findings after analyses. Thus the reproducibility was a success.
 
 
 [PILOT/COPILOT DO NOT EDIT THE CODE CHUNK BELOW]
